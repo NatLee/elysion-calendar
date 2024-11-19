@@ -1,9 +1,21 @@
+import os
+
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, HTTPException
+
 import requests
 
 from parse_room_schedule import parse_room_schedule
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=os.getenv("CORS_ORIGINS", "http://localhost:3000").split(","),
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class RoomStatus:
     def __init__(self, name: str, system: str):
