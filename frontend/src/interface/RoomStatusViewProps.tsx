@@ -5,5 +5,6 @@ export interface RoomStatusViewProps {
   onDateChange: (date: Date) => void;
   roomData: {
     rooms: Room[];
+    url: string;
   } | null;
 }

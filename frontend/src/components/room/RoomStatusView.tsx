@@ -20,6 +20,14 @@ export const RoomStatusView: React.FC<RoomStatusViewProps> = ({
           />
         </div>
         {roomData?.rooms && <RoomGrid rooms={roomData.rooms} />}
+
+        {roomData?.url && (
+        <div className="mt-4 text-sm text-gray-500">
+          <a href={roomData.url} target="_blank" rel="noopener noreferrer" className="hover:underline">
+            查看原始資料
+          </a>
+        </div>
+      )}
       </div>
     </div>
   );
