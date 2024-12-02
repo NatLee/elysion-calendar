@@ -44,3 +44,4 @@ export const TimeSlot: React.FC<TimeSlotProps> = React.memo(({ room, time, statu
   );
 });
 
+TimeSlot.displayName = 'TimeSlot';
