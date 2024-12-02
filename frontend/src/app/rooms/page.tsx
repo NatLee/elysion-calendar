@@ -22,7 +22,7 @@ export default function RoomsPage() {
     startOfWeek(new Date(), { weekStartsOn: 1 })
   );
 
-  const { roomData, error: roomError } = useRoomData(date);
+  const { roomData } = useRoomData(date);
   const { 
     weeklyData, 
     isLoading, 
