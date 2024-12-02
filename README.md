@@ -43,7 +43,9 @@ cd ..
 docker compose up -f docker-compose.dev.yml --build
 ```
 
-5. Open your browser and go to `http://localhost:3000`
+5. Open your browser and go to `http://localhost:3001`
+
+> Notice: Port 3000 is your default frontend server, but you need to through the backend NGINX server to access the frontend.
 
 
 ## Contributors
