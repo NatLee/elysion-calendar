@@ -8,28 +8,28 @@ import { Legend } from '@/components/room/Legend';
 
 import { TIME_SLOTS } from '@/constants/TIME_SLOTS';
 
+import { Room } from '@/types/Room';
+import { RoomData } from '@/types/RoomData';
+
 import { isBusinessHour } from '@/lib/room/isBusinessHour';
 import { isTimeInBooking } from '@/lib/room/isTimeInBooking';
 
 import type { WeeklyTimeGridProps } from '@/interface/WeeklyTimeGridProps';
 
 export const WeeklyTimeGrid: React.FC<WeeklyTimeGridProps> = ({ weeklyData, startDate }) => {
-  const rooms = useMemo(() => 
-    weeklyData.values().next().value?.rooms || [],
-    [weeklyData]
-  );
+  const rooms = useMemo(() => {
+    const firstValue = weeklyData.values().next().value;
+    return firstValue?.rooms || [];
+  }, [weeklyData]);
 
   const getTimeSlotStatus = useCallback((date: string, time: string, room: Room, dayData?: RoomData) => {
     if (!isBusinessHour(time)) return "closed";
 
-    const booking = dayData?.rooms
-      .find(r => r.id === room.id)
-      ?.bookings
-      .find(b => isTimeInBooking(time, b));
-
+    const roomData = dayData?.rooms.find(r => r.id === room.id);
+    const booking = roomData?.bookings.find(b => isTimeInBooking(time, b));
     if (booking) {
       return {
-        status: "booked",
+        status: "booked" as const,
         booking
       };
     }
@@ -37,7 +37,7 @@ export const WeeklyTimeGrid: React.FC<WeeklyTimeGridProps> = ({ weeklyData, star
     const currentDate = new Date();
     const slotDateTime = parse(`${date} ${time}`, 'yyyy-MM-dd HH:mm', new Date());
     
-    return slotDateTime < currentDate ? "past" : "available";
+    return slotDateTime < currentDate ? "past" as const : "available" as const;
   }, []);
 
   return (
@@ -75,7 +75,7 @@ export const WeeklyTimeGrid: React.FC<WeeklyTimeGridProps> = ({ weeklyData, star
                 return (
                   <div key={`${currentDate}-${time}`} className="relative border min-h-[40px]">
                     <div className="grid grid-cols-1 h-full">
-                      {rooms.map((room) => {
+                      {rooms.map((room: Room) => {
                         const status = getTimeSlotStatus(currentDate, time, room, dayData);
                         return (
                           <TimeSlot
