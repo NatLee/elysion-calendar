@@ -8,18 +8,17 @@ export const useWeeklyRoomData = (startDate: Date) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  const batchFetchData = async (dates: string[]): Promise<Map<string, RoomData>> => {
-    const batchSize = 7;
-    const batches = [];
+  const fetchWeeklyData = async (startDate: Date) => {
+    setIsLoading(true);
+    setError(null);
     
-    for (let i = 0; i < dates.length; i += batchSize) {
-      batches.push(dates.slice(i, i + batchSize));
-    }
-  
-    const results = new Map<string, RoomData>();
-  
-    for (const batch of batches) {
-      const batchPromises = batch.map(dateStr => 
+    try {
+      const dates = Array.from({ length: 21 }).map((_, index) => {
+        const currentDate = addDays(startDate, index);
+        return format(currentDate, 'yyyy-MM-dd');
+      });
+
+      const promises = dates.map(dateStr => 
         fetch(`/api/daily-schedule/${dateStr}`)
           .then(response => {
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -31,31 +30,15 @@ export const useWeeklyRoomData = (startDate: Date) => {
             error: error instanceof Error ? error : new Error(String(error))
           }))
       );
-  
-      const batchResults = await Promise.all(batchPromises);
+      const results = await Promise.all(promises);
+      const newData = new Map<string, RoomData>();
       
-      batchResults.forEach((result) => {
+      results.forEach((result) => {
         if ('data' in result && result.data) {
-          results.set(result.date, result.data);
+          newData.set(result.date, result.data);
         }
       });
-    }
-  
-    return results;
-  };
-
-  const fetchWeeklyData = async (startDate: Date) => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const dates = Array.from({ length: 21 }).map((_, index) => {
-        const currentDate = addDays(startDate, index);
-        return format(currentDate, 'yyyy-MM-dd');
-      });
-
-      const results = await batchFetchData(dates);
-      setWeeklyData(results);
+      setWeeklyData(newData);
     } catch (error) {
       console.error('Failed to fetch weekly data:', error);
       setError('無法獲取週資料');
