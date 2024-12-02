@@ -7,7 +7,13 @@ export const useRoomData = (date: Date) => {
 
   const fetchRoomData = async (date: Date) => {
     try {
-      const dateStr = date.toISOString().split('T')[0];
+      // Get YYYY-MM-DD string
+      const dateYear = date.getFullYear();
+      const dateMonth = date.getMonth() + 1;
+      const dateDay = date.getDate();
+      const dateStr = `${dateYear}-${dateMonth.toString().padStart(2, '0')}-${dateDay.toString().padStart(2, '0')}`;
+
+      // Fetch room data
       const response = await fetch(`/api/daily-schedule/${dateStr}`);
       if (!response.ok) {
         throw new Error('Network response was not ok');
