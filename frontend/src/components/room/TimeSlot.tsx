@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 
 import { TimeSlotProps } from '@/interface/TimeSlotProps';
 
-export const TimeSlot: React.FC<TimeSlotProps> = React.memo(({ room, time, status, booking }) => {
+export const TimeSlot: React.FC<TimeSlotProps> = React.memo(({ room, status, booking }) => {
   if (status === 'booked' && booking) {
     return (
       <div

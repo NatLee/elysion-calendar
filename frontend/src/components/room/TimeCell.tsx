@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 
 import { TimeCellProps } from '@/interface/TimeCellProps';
 
-export const TimeCell: React.FC<TimeCellProps> = React.memo(({ room, time, booking }) => {
+export const TimeCell: React.FC<TimeCellProps> = React.memo(({ booking }) => {
   return (
     <td 
       className={cn(
