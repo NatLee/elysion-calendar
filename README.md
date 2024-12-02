@@ -16,6 +16,35 @@ docker compose up --build
 
 3. Open your browser and go to `http://localhost:3000`
 
+## Frontend Debug
+
+1. Go to `frontend` directory
+
+```bash
+cd frontend
+```
+
+2. Install dependencies
+
+```bash
+yarn install
+```
+
+3. Start the frontend server
+
+```bash
+yarn start
+```
+
+4. Back to the root directory and start the backend server
+
+```bash
+cd ..
+docker compose up -f docker-compose.dev.yml --build
+```
+
+5. Open your browser and go to `http://localhost:3000`
+
 
 ## Contributors
 
