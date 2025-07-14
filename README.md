@@ -6,15 +6,42 @@
 
 ## Usage
 
-1. Clone this repository
+### Development Mode (with Watch Support)
 
-2. Use docker compose to build and run the project
+For development with hot reloading and watch mode:
 
 ```bash
-docker compose up --build
+# Start development environment
+./dev.sh
+
+# Or manually:
+docker-compose -f docker-compose.dev.yml up --build
 ```
 
-3. Open your browser and go to `http://localhost:3000`
+This will start:
+- Frontend with hot reload at `http://localhost:3001`
+- Backend with auto-reload at `http://localhost:8000`
+- Nginx proxy at `http://localhost:3000`
+
+### Production Mode
+
+For production deployment:
+
+```bash
+# Start production environment
+./prod.sh
+
+# Or manually:
+docker-compose up --build
+```
+
+This will start the application at `http://localhost:3000`
+
+### Quick Start
+
+1. Clone this repository
+2. Choose your mode and run the appropriate command above
+3. Open your browser and navigate to the provided URL
 
 ## Frontend Debug
 
