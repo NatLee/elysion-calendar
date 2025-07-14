@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { addDays, startOfWeek } from 'date-fns';
+import { addDays, startOfWeek, parseISO } from 'date-fns';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RoomStatusView } from '@/components/room/RoomStatusView';
@@ -17,10 +17,23 @@ import { useRoomData } from '@/hooks/useRoomData';
 import { useWeeklyRoomData } from '@/hooks/useWeeklyRoomData';
 
 export default function RoomsPage() {
-  const [date, setDate] = React.useState<Date>(new Date());
-  const [startDate, setStartDate] = React.useState<Date>(
-    startOfWeek(new Date(), { weekStartsOn: 1 })
-  );
+  // Get today's date in YYYY-MM-DD format
+  const initialDateStr = new Date().toISOString().split('T')[0];
+  const initialDate = parseISO(initialDateStr);
+  const initialStartDate = startOfWeek(initialDate, { weekStartsOn: 1 });
+  
+  const [date, setDate] = React.useState<Date>(initialDate);
+  const [startDate, setStartDate] = React.useState<Date>(initialStartDate);
+  
+  // Update to the current date only on the client side
+  const [isClient, setIsClient] = React.useState(false);
+  React.useEffect(() => {
+    setIsClient(true);
+    // Update to current date after hydration is complete
+    const currentDate = new Date();
+    setDate(currentDate);
+    setStartDate(startOfWeek(currentDate, { weekStartsOn: 1 }));
+  }, []);
 
   const { roomData } = useRoomData(date);
   const { 
@@ -59,6 +72,11 @@ export default function RoomsPage() {
             onDateChange={handleDateChange}
             roomData={roomData}
           />
+          {!isClient && (
+            <div className="text-sm text-muted-foreground mt-2">
+              正在載入當前日期資料...
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="grid">
