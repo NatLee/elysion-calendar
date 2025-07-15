@@ -24,6 +24,25 @@ services:
     networks:
       - elysion-calendar-network
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: elysion-calendar-frontend
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:8000
+    depends_on:
+      - backend
+    networks:
+      - elysion-calendar-network
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    command: npm run dev
+
 networks:
   elysion-calendar-network:
     driver: bridge
