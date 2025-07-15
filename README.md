@@ -20,8 +20,6 @@ docker-compose -f docker-compose.dev.yml up --build
 
 This will start:
 - Frontend with hot reload at `http://localhost:3001`
-- Backend with auto-reload at `http://localhost:8000`
-- Nginx proxy at `http://localhost:3000`
 
 ### Production Mode
 
