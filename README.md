@@ -20,8 +20,6 @@ docker-compose -f docker-compose.dev.yml up --build
 
 This will start:
 - Frontend with hot reload at `http://localhost:3001`
-- Backend with auto-reload at `http://localhost:8000`
-- Nginx proxy at `http://localhost:3000`
 
 ### Production Mode
 
@@ -80,10 +78,12 @@ docker compose up -f docker-compose.dev.yml --build
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
 <!-- prettier-ignore-start -->
 <!-- markdownlint-disable -->
+
 <table>
   <tbody>
     <tr>
       <td align="center"><a href="https://github.com/NatLee"><img src="https://avatars.githubusercontent.com/u/10178964?v=3?s=100" width="100px;" alt="Nat Lee"/><br /><sub><b>Nat Lee</b></sub></a></td>
+      <td align="center"><a href="https://github.com/kidkcl"><img src="https://avatars.githubusercontent.com/u/20700635?v=4" width="100px;" alt="kidkcl"/><br /><sub><b>kidkcl</b></sub></a></td>
     </tr>
   </tbody>
 </table>

@@ -1,11 +1,10 @@
 import React from 'react';
-import { Calendar } from '@/components/ui/calendar';
-
+import { ClientCalendar } from '@/components/ClientCalendar';
 import { DateSelectorProps } from '@/interface/DateSelectorProps';
 
 export const DateSelector: React.FC<DateSelectorProps> = React.memo(({ selected, onSelect }) => {
   return (
-    <Calendar
+    <ClientCalendar
       mode="single"
       selected={selected}
       onSelect={onSelect}
