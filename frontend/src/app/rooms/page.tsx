@@ -40,7 +40,8 @@ export default function RoomsPage() {
     weeklyData, 
     isLoading, 
     error: weeklyError, 
-    refetch: refetchWeekly 
+    refetch: refetchWeekly,
+    dates
   } = useWeeklyRoomData(startDate);
 
   const handleDateChange = (newDate: Date) => {
@@ -48,11 +49,11 @@ export default function RoomsPage() {
   };
 
   const handlePreviousWeek = () => {
-    setStartDate(addDays(startDate, -21));
+    setStartDate(addDays(startDate, -7));
   };
 
   const handleNextWeek = () => {
-    setStartDate(addDays(startDate, 21));
+    setStartDate(addDays(startDate, 7));
   };
 
   return (
@@ -63,7 +64,7 @@ export default function RoomsPage() {
         <TabsList className="mb-4">
           <TabsTrigger value="cards">包廂卡片</TabsTrigger>
           <TabsTrigger value="grid">時間表格</TabsTrigger>
-          <TabsTrigger value="weekly">三週檢視</TabsTrigger>
+          <TabsTrigger value="weekly">單週檢視</TabsTrigger>
         </TabsList>
 
         <TabsContent value="cards">
@@ -93,7 +94,7 @@ export default function RoomsPage() {
           
           {isLoading ? <LoadingState /> :
            weeklyError ? <ErrorState error={weeklyError} onRetry={refetchWeekly} /> :
-           <WeeklyTimeGrid weeklyData={weeklyData} startDate={startDate} />}
+           <WeeklyTimeGrid weeklyData={weeklyData} dates={dates} />}
         </TabsContent>
       </Tabs>
     </div>
