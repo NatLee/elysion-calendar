@@ -7,8 +7,10 @@ services:
     container_name: elysion-calendar-backend
     environment:
       - CORS_ORIGINS=http://localhost:3000,http://frontend:3000
+      - REDIS_URL=redis://redis:6379/0
     networks:
       - elysion-calendar-network
+    command: uvicorn app:app --host 0.0.0.0 --port 8000 --reload
 
   frontend:
     build:
@@ -28,6 +30,12 @@ services:
       - /app/node_modules
       - /app/.next
     command: npm run dev
+
+  redis:
+    image: redis:7-alpine
+    container_name: elysion-calendar-redis
+    networks:
+      - elysion-calendar-network
 
 networks:
   elysion-calendar-network:

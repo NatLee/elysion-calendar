@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect } from 'react';
 import { Calendar as UICalendar, CalendarProps } from '@/components/ui/calendar';
 import { Skeleton } from '@/components/ui/skeleton';
 

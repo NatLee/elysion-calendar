@@ -7,18 +7,21 @@ export const useWeeklyRoomData = (startDate: Date) => {
   const [weeklyData, setWeeklyData] = useState<Map<string, RoomData>>(new Map());
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [dates, setDates] = useState<string[]>([]);
 
+  // 改為只查詢 7 天（單週）
   const fetchWeeklyData = async (startDate: Date) => {
     setIsLoading(true);
     setError(null);
-    
     try {
-      const dates = Array.from({ length: 21 }).map((_, index) => {
+      const dateArr = Array.from({ length: 7 }).map((_, index) => {
         const currentDate = addDays(startDate, index);
         return format(currentDate, 'yyyy-MM-dd');
       });
+      setDates(dateArr);
 
-      const promises = dates.map(dateStr => 
+      // 並行抓取所有日期資料
+      const promises = dateArr.map(dateStr => 
         fetch(`/api/daily-schedule/${dateStr}`)
           .then(response => {
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -32,7 +35,6 @@ export const useWeeklyRoomData = (startDate: Date) => {
       );
       const results = await Promise.all(promises);
       const newData = new Map<string, RoomData>();
-      
       results.forEach((result) => {
         if ('data' in result && result.data) {
           newData.set(result.date, result.data);
@@ -51,5 +53,5 @@ export const useWeeklyRoomData = (startDate: Date) => {
     fetchWeeklyData(startDate);
   }, [startDate]);
 
-  return { weeklyData, isLoading, error, refetch: () => fetchWeeklyData(startDate) };
+  return { weeklyData, isLoading, error, refetch: () => fetchWeeklyData(startDate), dates };
 };
