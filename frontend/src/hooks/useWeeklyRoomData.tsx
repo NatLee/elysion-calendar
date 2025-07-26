@@ -9,7 +9,7 @@ export const useWeeklyRoomData = (startDate: Date) => {
   const [error, setError] = useState<string | null>(null);
   const [dates, setDates] = useState<string[]>([]);
 
-  // 改為只查詢 7 天（單週）
+  // Change to querying only 7 days (a single week)
   const fetchWeeklyData = async (startDate: Date) => {
     setIsLoading(true);
     setError(null);
@@ -20,7 +20,7 @@ export const useWeeklyRoomData = (startDate: Date) => {
       });
       setDates(dateArr);
 
-      // 並行抓取所有日期資料
+      // Fetch data for all dates in parallel
       const promises = dateArr.map(dateStr => 
         fetch(`/api/daily-schedule/${dateStr}`)
           .then(response => {
@@ -43,7 +43,7 @@ export const useWeeklyRoomData = (startDate: Date) => {
       setWeeklyData(newData);
     } catch (error) {
       console.error('Failed to fetch weekly data:', error);
-      setError('無法獲取週資料');
+      setError('Failed to fetch weekly data');
     } finally {
       setIsLoading(false);
     }

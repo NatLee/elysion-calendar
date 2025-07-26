@@ -16,10 +16,10 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(mess
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 redis_client = redis.Redis.from_url(REDIS_URL)
-CACHE_TTL = 60 * 60  # 60分鐘
-LOCK_EXPIRE = 60     # 鎖定 60 秒，防止死鎖
+CACHE_TTL = 60 * 60  # 60 minutes
+LOCK_EXPIRE = 60     # 60 seconds, prevent deadlocks
 
-# 建立全域 thread pool，最多同時 30 個背景任務
+# Create a global thread pool, with a maximum of 30 background tasks
 thread_pool = ThreadPoolExecutor(max_workers=30)
 
 app = FastAPI()
@@ -85,10 +85,10 @@ async def get_daily_schedule(date: str):
     try:
         cached = redis_client.get(cache_key)
         if cached:
-            # 背景更新快取（用 thread pool，並加lock）
+            # Background update cache (use thread pool, and add lock)
             thread_pool.submit(update_cache_async, date)
             return json.loads(cached)
-        # 沒有快取時，嘗試取得lock
+        # If no cache, try to get lock
         if acquire_lock(lock_key):
             try:
                 url = f"http://calendar.elysion.com.tw/bookinfo.aspx?bd={date}"
@@ -107,8 +107,8 @@ async def get_daily_schedule(date: str):
             finally:
                 release_lock(lock_key)
         else:
-            # 有其他請求正在同步爬蟲，這裡回傳 202 狀態碼表示「正在處理」
-            return JSONResponse(content={"detail": "資料正在更新，請稍後再試"}, status_code=202)
+            # There are other requests syncing the crawler, return 202 status code to indicate "processing"
+            return JSONResponse(content={"detail": "Data is being updated, please try again later"}, status_code=202)
     except Exception as e:
         logging.error(f"[get_daily_schedule] error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))

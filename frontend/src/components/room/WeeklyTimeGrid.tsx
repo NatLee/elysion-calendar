@@ -7,14 +7,14 @@ import { isTimeInBooking } from '@/lib/room/isTimeInBooking';
 import type { Room, Booking } from '@/types/Room';
 import type { RoomData } from '@/types/RoomData';
 
-// 只保留 weeklyData, dates 兩個 props
+// Only keep weeklyData and dates props
 interface WeeklyTimeGridProps {
   weeklyData: Map<string, RoomData>;
   dates: string[];
 }
 
 export const WeeklyTimeGrid: React.FC<WeeklyTimeGridProps> = ({ weeklyData, dates: displayDates }) => {
-  // 收集所有房間 id 與名稱
+  // Collect all room ids and names
   const allRooms: Room[] = React.useMemo(() => {
     const roomMap = new Map<number, Room>();
     for (const day of weeklyData.values()) {
@@ -31,7 +31,7 @@ export const WeeklyTimeGrid: React.FC<WeeklyTimeGridProps> = ({ weeklyData, date
     return <div className="text-center text-gray-500 py-8">本週沒有資料</div>;
   }
 
-  // 取得昨天的資料（用於跨天 booking）
+  // Get yesterday's data (for cross-day booking)
   const yesterdayStr = displayDates.length > 0 ? format(subDays(new Date(displayDates[0]), 1), 'yyyy-MM-dd') : '';
   const yesterdayData = weeklyData.get(yesterdayStr);
 
