@@ -6,6 +6,3 @@ export interface Room {
   name: string;
   bookings: Booking[];
 }
-
-export type { Booking };
-  
