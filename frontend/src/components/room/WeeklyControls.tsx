@@ -15,17 +15,17 @@ export const WeeklyControls: React.FC<WeeklyControlsProps> = ({
       className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded"
       disabled={isLoading}
     >
-      上三週
+      上一週
     </button>
     <span className="font-medium">
-      {format(startDate, 'yyyy/MM/dd')} - {format(addDays(startDate, 20), 'yyyy/MM/dd')}
+      {format(startDate, 'yyyy/MM/dd')} - {format(addDays(startDate, 6), 'yyyy/MM/dd')}
     </span>
     <button
       onClick={onNextWeek}
       className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded"
       disabled={isLoading}
     >
-      下三週
+      下一週
     </button>
   </div>
 );
