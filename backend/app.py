@@ -1,29 +1,47 @@
-import os
-import hashlib
-import redis
+"""Small API in front of the Elysion booking page, with a Redis cache.
+
+GET /api/daily-schedule/{YYYY-MM-DD} returns that day's rooms and bookings.
+
+Caching: a day is fetched from the official site once and kept in Redis for
+CACHE_TTL seconds. Once an entry is older than REFRESH_AFTER seconds, the next
+request still gets the cached copy right away and a background job fetches a
+fresh one. A per-day lock makes sure only one request talks to the site for a
+given day; others wait for it instead of fetching again.
+"""
+
+from __future__ import annotations
+
 import json
-from concurrent.futures import ThreadPoolExecutor
 import logging
+import math
+import os
+import time
+from concurrent.futures import ThreadPoolExecutor
+from datetime import date
+from typing import Any, Optional
 
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi import FastAPI, HTTPException
+import redis
 import requests
-from fastapi.responses import JSONResponse
-from parse_room_schedule import parse_room_schedule
+from fastapi import FastAPI, HTTPException, Response
+from fastapi.middleware.cors import CORSMiddleware
 
-# 初始化 logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
+from parse_room_schedule import ScheduleFormatError, parse_schedule_page
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+log = logging.getLogger("elysion")
+
+SOURCE_URL = os.getenv("SOURCE_URL", "https://calendar.elysion.com.tw/bookinfo.aspx")
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+CACHE_TTL = 60 * 60  # seconds an entry is kept at all
+REFRESH_AFTER = 5 * 60  # seconds before an entry is refreshed in the background
+FETCH_TIMEOUT = 15  # seconds for one request to the official site
+LOCK_TIMEOUT = FETCH_TIMEOUT * 2  # a crashed holder can block a day at most this long
+CACHE_VERSION = 2  # bump when the cached JSON shape changes, so old entries are ignored
+
 redis_client = redis.Redis.from_url(REDIS_URL)
-CACHE_TTL = 60 * 60  # 60 minutes
-LOCK_EXPIRE = 60     # 60 seconds, prevent deadlocks
+background = ThreadPoolExecutor(max_workers=4)
 
-# Create a global thread pool, with a maximum of 30 background tasks
-thread_pool = ThreadPoolExecutor(max_workers=30)
-
-app = FastAPI()
-
+app = FastAPI(title="Elysion Calendar API")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=os.getenv("CORS_ORIGINS", "http://localhost").split(","),
@@ -32,87 +50,92 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-class RoomStatus:
-    def __init__(self, name: str, system: str):
-        self.name = name
-        self.system = system
-        self.reservations = []
 
-def acquire_lock(lock_key):
-    lock = redis_client.lock(lock_key, timeout=LOCK_EXPIRE)
-    if lock.acquire(blocking=False):
-        return lock
-    return None
+def source_url(day: date) -> str:
+    return f"{SOURCE_URL}?bd={day.isoformat()}"
 
-def release_lock(lock):
-    if lock:
-        try:
-            lock.release()
-        except redis.exceptions.LockError:
-            logging.warning(f"Failed to release lock: {lock.name}")
 
-def update_cache_async(date: str):
-    cache_key = f"daily_schedule:{date}"
-    sha_key = f"daily_schedule_sha:{date}"
-    url = f"http://calendar.elysion.com.tw/bookinfo.aspx?bd={date}"
-    lock_key = f"lock:daily_schedule:{date}"
+def fetch_html(url: str) -> bytes:
+    response = requests.get(url, timeout=FETCH_TIMEOUT)
+    response.raise_for_status()
+    return response.content  # bytes: BeautifulSoup reads the charset from the page itself
+
+
+def _cache_key(day: date) -> str:
+    return f"daily_schedule:v{CACHE_VERSION}:{day.isoformat()}"
+
+
+def _lock(day: date):
+    return redis_client.lock(f"lock:{_cache_key(day)}", timeout=LOCK_TIMEOUT)
+
+
+def _release(lock) -> None:
     try:
-        if acquire_lock(lock_key):
-            try:
-                response = requests.get(url)
-                html = response.text
-                html_sha = hashlib.sha256(html.encode()).hexdigest()
-                cached_sha = redis_client.get(sha_key)
-                if not cached_sha or cached_sha.decode() != html_sha:
-                    rooms = parse_room_schedule(html)
-                    result = {
-                        "date": date,
-                        "rooms": rooms,
-                        "url": url,
-                    }
-                    redis_client.setex(cache_key, CACHE_TTL, json.dumps(result, ensure_ascii=False))
-                    redis_client.setex(sha_key, CACHE_TTL, html_sha)
-            finally:
-                release_lock(lock_key)
-    except Exception as e:
-        logging.error(f"[update_cache_async] error: {e}", exc_info=True)
+        lock.release()
+    except redis.exceptions.LockError:
+        log.warning("lock %s expired before it was released", lock.name)
 
-@app.get("/api/daily-schedule/{date}")
-async def get_daily_schedule(date: str):
-    cache_key = f"daily_schedule:{date}"
-    sha_key = f"daily_schedule_sha:{date}"
-    lock_key = f"lock:daily_schedule:{date}"
+
+def read_cache(day: date) -> Optional[dict[str, Any]]:
+    raw = redis_client.get(_cache_key(day))
+    return json.loads(raw) if raw else None
+
+
+def fetch_and_store(day: date) -> dict[str, Any]:
+    """Fetch one day from the official site and cache it. Call with the day's lock held."""
+    url = source_url(day)
+    entry = {
+        "fetched_at": time.time(),
+        "data": {"date": day.isoformat(), "url": url, **parse_schedule_page(fetch_html(url))},
+    }
+    redis_client.set(_cache_key(day), json.dumps(entry, ensure_ascii=False), ex=CACHE_TTL)
+    return entry
+
+
+def refresh_in_background(day: date) -> None:
+    lock = _lock(day)
+    if not lock.acquire(blocking=False):
+        return  # someone else is already fetching this day
     try:
-        cached = redis_client.get(cache_key)
-        if cached:
-            # Background update cache (use thread pool, and add lock)
-            thread_pool.submit(update_cache_async, date)
-            return json.loads(cached)
-        # If no cache, try to get lock
-        if acquire_lock(lock_key):
-            try:
-                url = f"http://calendar.elysion.com.tw/bookinfo.aspx?bd={date}"
-                response = requests.get(url)
-                html = response.text
-                html_sha = hashlib.sha256(html.encode()).hexdigest()
-                rooms = parse_room_schedule(html)
-                result = {
-                    "date": date,
-                    "rooms": rooms,
-                    "url": url,
-                }
-                redis_client.setex(cache_key, CACHE_TTL, json.dumps(result, ensure_ascii=False))
-                redis_client.setex(sha_key, CACHE_TTL, html_sha)
-                return result
-            finally:
-                release_lock(lock_key)
-        else:
-            # There are other requests syncing the crawler, return 202 status code to indicate "processing"
-            return JSONResponse(content={"detail": "Data is being updated, please try again later"}, status_code=202)
-    except Exception as e:
-        logging.error(f"[get_daily_schedule] error: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        fetch_and_store(day)
+    except Exception:
+        log.exception("background refresh of %s failed; keeping the cached copy", day)
+    finally:
+        _release(lock)
+
+
+def load_day(day: date) -> dict[str, Any]:
+    entry = read_cache(day)
+    if entry is not None:
+        if time.time() - entry["fetched_at"] > REFRESH_AFTER:
+            background.submit(refresh_in_background, day)
+        return entry
+    lock = _lock(day)
+    if not lock.acquire(blocking=True, blocking_timeout=LOCK_TIMEOUT):
+        raise HTTPException(503, "The official site is slow right now, please try again.")
+    try:
+        # Another request may have filled the cache while we were waiting for the lock.
+        return read_cache(day) or fetch_and_store(day)
+    finally:
+        _release(lock)
+
+
+@app.get("/api/daily-schedule/{day}")
+def get_daily_schedule(day: date, response: Response) -> dict[str, Any]:
+    try:
+        entry = load_day(day)
+    except requests.RequestException as error:
+        log.warning("fetching %s failed: %s", day, error)
+        raise HTTPException(502, "Could not reach the official booking site.") from error
+    except ScheduleFormatError as error:
+        log.error("the booking page for %s changed: %s", day, error)
+        raise HTTPException(502, "The official booking page changed and cannot be read.") from error
+    fresh_for = max(0, math.ceil(REFRESH_AFTER - (time.time() - entry["fetched_at"])))
+    response.headers["Cache-Control"] = f"public, max-age={fresh_for}"
+    return entry["data"]
+
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)
