@@ -1,22 +1,18 @@
-import './globals.css'
-import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import type { Metadata } from "next";
 
-const inter = Inter({ subsets: ['latin'] })
+import { SITE } from "@/config/site";
+
+import "./globals.css";
 
 export const metadata: Metadata = {
-  title: 'Elysion Calendar',
-  description: 'Karaoke Room Reservation Calendar',
-}
+  title: `${SITE.title} · ${SITE.name}`,
+  description: SITE.description,
+};
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="zh-TW">
-      <body className={inter.className}>{children}</body>
+    <html lang="zh-Hant-TW">
+      <body className="min-h-dvh font-sans">{children}</body>
     </html>
-  )
+  );
 }
