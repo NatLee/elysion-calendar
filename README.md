@@ -12,7 +12,7 @@ It reads the shop's official booking page and shows the same data in a way that 
 to scan: one card per room, a full-day time table, and a weekly overview of how many
 rooms are still free in every half hour. Works on a phone, follows your light/dark setting.
 
-![Room cards for one day, with the week strip, a "rooms free right now" line and each room's free periods](./doc/screenshot-desktop.png)
+![Room cards for one day, with the week strip, a "rooms free right now" line and each room's free periods](./docs/images/screenshot-desktop.png)
 
 ## What's on the page
 
@@ -29,9 +29,9 @@ Slots that have already started turn grey, using the shop's clock (Taiwan time) 
 than your device's. Days that are over have no data on the official site, so they show a
 short note instead.
 
-![Phone screens: room cards, the time table, and the weekly overview in dark mode](./doc/screenshot-phone.png)
+![Phone screens: room cards, the time table, and the weekly overview in dark mode](./docs/images/screenshot-phone.png)
 
-![The weekly overview in dark mode on a laptop](./doc/screenshot-week-dark.png)
+![The weekly overview in dark mode on a laptop](./docs/images/screenshot-week-dark.png)
 
 > The screenshots use made-up bookings from a local copy of the booking page, with the clock
 > set to Saturday 2026-11-07 14:20.
@@ -164,7 +164,7 @@ frontend/           Next.js app
   src/hooks/        shop clock, shared day store
   src/components/   week strip, date picker, room cards, time table, weekly overview
 nginx/default.conf  production reverse proxy
-doc/                screenshots
+docs/images/        screenshots
 ```
 
 ## Contributors
